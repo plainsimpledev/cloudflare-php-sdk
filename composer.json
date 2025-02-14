@@ -1,0 +1,31 @@
+{
+    "name": "plainsimple/cloudflare-sdk-php",
+    "description": "PHP SDK for working with Cloudflare API",
+    "type": "library",
+    "authors": [
+        {
+            "name": "Viacheslav Zhabonos",
+            "email": "vyacheslav0310@gmail.com"
+        }
+    ],
+    "require": {
+        "ext-json": "*",
+        "php": ">=8.3",
+        "psr/http-message": "^2.0",
+        "guzzlehttp/guzzle": "^7.9",
+        "fig/http-message-util": "^1.1"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^11.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "PlainSimple\\Cloudflare\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "classmap": [
+            "tests/"
+        ]
+    }
+}
