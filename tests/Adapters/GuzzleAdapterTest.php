@@ -7,7 +7,7 @@ use PHPUnit\Framework\TestCase;
 use PlainSimple\Cloudflare\Adapters\GuzzleAdapter;
 use PlainSimple\Cloudflare\Auth\ApiToken;
 use PlainSimple\Cloudflare\Auth\Auth;
-use PlainSimple\Cloudflare\Exceptions\InvalidRequestMethod;
+use PlainSimple\Cloudflare\Exceptions\InvalidRequestMethodException;
 use Psr\Http\Message\ResponseInterface;
 
 class GuzzleAdapterTest extends TestCase
@@ -15,7 +15,7 @@ class GuzzleAdapterTest extends TestCase
     private const string TEST_API_TOKEN = '1234567890abcdefgEHASDGKCGKASGCA';
 
     /**
-     * @throws InvalidRequestMethod
+     * @throws InvalidRequestMethodException
      * @throws GuzzleException
      * @throws JsonException
      */
@@ -47,7 +47,7 @@ class GuzzleAdapterTest extends TestCase
     }
 
     /**
-     * @throws InvalidRequestMethod
+     * @throws InvalidRequestMethodException
      * @throws GuzzleException
      * @throws JsonException
      */
@@ -59,7 +59,7 @@ class GuzzleAdapterTest extends TestCase
     }
 
     /**
-     * @throws InvalidRequestMethod
+     * @throws InvalidRequestMethodException
      * @throws GuzzleException
      * @throws JsonException
      */
@@ -71,7 +71,7 @@ class GuzzleAdapterTest extends TestCase
     }
 
     /**
-     * @throws InvalidRequestMethod
+     * @throws InvalidRequestMethodException
      * @throws GuzzleException
      * @throws JsonException
      */
@@ -83,7 +83,7 @@ class GuzzleAdapterTest extends TestCase
     }
 
     /**
-     * @throws InvalidRequestMethod
+     * @throws InvalidRequestMethodException
      * @throws GuzzleException
      * @throws JsonException
      */

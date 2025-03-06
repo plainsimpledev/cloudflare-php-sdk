@@ -6,6 +6,6 @@ namespace PlainSimple\Cloudflare\Exceptions;
 
 use Exception;
 
-class EndpointDoesNotExists extends Exception
+class EndpointDoesNotExistsException extends Exception
 {
 }

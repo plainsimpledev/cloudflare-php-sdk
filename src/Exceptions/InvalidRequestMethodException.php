@@ -6,6 +6,6 @@ namespace PlainSimple\Cloudflare\Exceptions;
 
 use Exception;
 
-class InvalidRequestMethod extends Exception
+class InvalidRequestMethodException extends Exception
 {
 }

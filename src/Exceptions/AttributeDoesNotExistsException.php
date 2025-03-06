@@ -6,7 +6,7 @@ namespace PlainSimple\Cloudflare\Exceptions;
 
 use Exception;
 
-class AttributeDoesNotExists extends Exception
+class AttributeDoesNotExistsException extends Exception
 {
     public function __construct(string $attributeName, string $className)
     {

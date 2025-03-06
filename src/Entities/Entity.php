@@ -2,14 +2,14 @@
 
 namespace PlainSimple\Cloudflare\Entities;
 
-use PlainSimple\Cloudflare\Exceptions\AttributeDoesNotExists;
+use PlainSimple\Cloudflare\Exceptions\AttributeDoesNotExistsException;
 use PlainSimple\Cloudflare\Utilities\AttributeNamer;
 use Throwable;
 
 abstract class Entity
 {
     /**
-     * @throws AttributeDoesNotExists
+     * @throws AttributeDoesNotExistsException
      */
     public function __get(string $name)
     {
@@ -23,11 +23,11 @@ abstract class Entity
             return $this->$name;
         }
 
-        throw new AttributeDoesNotExists($name, self::class);
+        throw new AttributeDoesNotExistsException($name, self::class);
     }
 
     /**
-     * @throws AttributeDoesNotExists
+     * @throws AttributeDoesNotExistsException
      */
     public function __set(string $name, $value): void
     {
@@ -42,7 +42,7 @@ abstract class Entity
             return;
         }
 
-        throw new AttributeDoesNotExists($name, self::class);
+        throw new AttributeDoesNotExistsException($name, self::class);
     }
 
     public function __isset(string $name): bool
@@ -54,7 +54,7 @@ abstract class Entity
         }
     }
 
-    public static function fromCloudflareData(array $cloudflareData): static
+    public static function makeFromCloudflareData(array $cloudflareData): static
     {
         $entity = new static();
         foreach ($cloudflareData as $attribute => $value) {

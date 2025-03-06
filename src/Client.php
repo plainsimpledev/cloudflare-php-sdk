@@ -4,7 +4,7 @@ namespace PlainSimple\Cloudflare;
 
 use PlainSimple\Cloudflare\Adapters\Adapter;
 use PlainSimple\Cloudflare\Endpoints\Endpoint;
-use PlainSimple\Cloudflare\Exceptions\EndpointDoesNotExists;
+use PlainSimple\Cloudflare\Exceptions\EndpointDoesNotExistsException;
 
 readonly class Client
 {
@@ -15,12 +15,12 @@ readonly class Client
     }
 
     /**
-     * @throws EndpointDoesNotExists
+     * @throws EndpointDoesNotExistsException
      */
     private function getEndpointInstance(string $className): Endpoint
     {
         if (!class_exists($className)) {
-            throw new EndpointDoesNotExists(sprintf('Endpoint `%s` does not exist.', $className));
+            throw new EndpointDoesNotExistsException(sprintf('Endpoint `%s` does not exist.', $className));
         }
 
         if (!isset($this->endpointsInstances[$className])) {

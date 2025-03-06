@@ -8,10 +8,10 @@ use Fig\Http\Message\RequestMethodInterface;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
 use PlainSimple\Cloudflare\Auth\Auth;
-use PlainSimple\Cloudflare\Exceptions\InvalidRequestMethod;
+use PlainSimple\Cloudflare\Exceptions\InvalidRequestMethodException;
 use Psr\Http\Message\ResponseInterface;
 
-readonly class GuzzleAdapter implements Adapter
+class GuzzleAdapter implements Adapter
 {
     private const array ALLOWED_METHODS = [
         RequestMethodInterface::METHOD_GET,
@@ -39,7 +39,7 @@ readonly class GuzzleAdapter implements Adapter
 
     /**
      * @throws GuzzleException
-     * @throws InvalidRequestMethod
+     * @throws InvalidRequestMethodException
      */
     public function get(string $url, array $data = [], array $headers = []): ResponseInterface
     {
@@ -47,7 +47,7 @@ readonly class GuzzleAdapter implements Adapter
     }
 
     /**
-     * @throws InvalidRequestMethod
+     * @throws InvalidRequestMethodException
      * @throws GuzzleException
      */
     public function post(string $url, array $data = [], array $headers = []): ResponseInterface
@@ -56,7 +56,7 @@ readonly class GuzzleAdapter implements Adapter
     }
 
     /**
-     * @throws InvalidRequestMethod
+     * @throws InvalidRequestMethodException
      * @throws GuzzleException
      */
     public function put(string $url, array $data = [], array $headers = []): ResponseInterface
@@ -65,7 +65,7 @@ readonly class GuzzleAdapter implements Adapter
     }
 
     /**
-     * @throws InvalidRequestMethod
+     * @throws InvalidRequestMethodException
      * @throws GuzzleException
      */
     public function patch(string $url, array $data = [], array $headers = []): ResponseInterface
@@ -75,7 +75,7 @@ readonly class GuzzleAdapter implements Adapter
 
     /**
      * @throws GuzzleException
-     * @throws InvalidRequestMethod
+     * @throws InvalidRequestMethodException
      */
     public function delete(string $url, array $data = [], array $headers = []): ResponseInterface
     {
@@ -83,13 +83,13 @@ readonly class GuzzleAdapter implements Adapter
     }
 
     /**
-     * @throws InvalidRequestMethod
+     * @throws InvalidRequestMethodException
      * @throws GuzzleException
      */
     protected function request(string $method, string $url, array $data = [], array $headers = []): ResponseInterface
     {
         if (!in_array($method, self::ALLOWED_METHODS, true)) {
-            throw new InvalidRequestMethod(
+            throw new InvalidRequestMethodException(
                 sprintf(
                     'Invalid request method `%s`. Request method must be one of the following: %s',
                     $method,

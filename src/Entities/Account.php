@@ -27,7 +27,7 @@ class Account extends Entity
     public function setSettings(mixed $value): void
     {
         if (!($value instanceof AccountSettings)) {
-            $value = AccountSettings::fromCloudflareData($value);
+            $value = AccountSettings::makeFromCloudflareData($value);
         }
         $this->settings = $value;
     }
