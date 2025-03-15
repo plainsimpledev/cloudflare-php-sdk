@@ -7,11 +7,11 @@ namespace PlainSimple\Cloudflare\Adapters;
 use Fig\Http\Message\RequestMethodInterface;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
-use PlainSimple\Cloudflare\Auth\Auth;
+use PlainSimple\Cloudflare\Auth\AuthInterface;
 use PlainSimple\Cloudflare\Exceptions\InvalidRequestMethodException;
 use Psr\Http\Message\ResponseInterface;
 
-class GuzzleAdapter implements Adapter
+class GuzzleAdapter implements AdapterInterface
 {
     private const array ALLOWED_METHODS = [
         RequestMethodInterface::METHOD_GET,
@@ -24,7 +24,7 @@ class GuzzleAdapter implements Adapter
     private Client $client;
 
     public function __construct(
-        Auth $auth,
+        AuthInterface $auth,
         string $baseUri = 'https://api.cloudflare.com/client/v4'
     ) {
         $headers = $auth->getHeaders();

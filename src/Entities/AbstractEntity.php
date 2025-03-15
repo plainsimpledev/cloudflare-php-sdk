@@ -6,7 +6,7 @@ use PlainSimple\Cloudflare\Exceptions\AttributeDoesNotExistsException;
 use PlainSimple\Cloudflare\Utilities\AttributeNamer;
 use Throwable;
 
-abstract class Entity
+abstract class AbstractEntity
 {
     /**
      * @throws AttributeDoesNotExistsException
@@ -32,13 +32,17 @@ abstract class Entity
     public function __set(string $name, $value): void
     {
         $setterMethodName = AttributeNamer::getSetterName($name);
+        var_dump($name,$setterMethodName);
+        if ($name == 'settings') {
+            var_dump($name,$setterMethodName);exit;
+        }
         if (method_exists($this, $setterMethodName)) {
             $this->$setterMethodName($value);
             return;
         }
 
         if (property_exists($this, $name)) {
-            $this->$name = $name;
+            $this->$name = $value;
             return;
         }
 

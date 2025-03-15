@@ -10,10 +10,12 @@ use PlainSimple\Cloudflare\Exceptions\ErrorResponseException;
 use PlainSimple\Cloudflare\Exceptions\InvalidClassException;
 use PlainSimple\Cloudflare\Responses\EntityResponse;
 use PlainSimple\Cloudflare\Responses\ListResponse;
+use Psr\Http\Message\ResponseInterface;
 
-class Accounts extends Endpoint
+class Accounts extends AbstractEndpoint
 {
     /**
+     * @link https://developers.cloudflare.com/api/resources/accounts/methods/list/
      * @throws InvalidClassException
      * @throws ErrorResponseException
      * @throws JsonException
@@ -35,6 +37,7 @@ class Accounts extends Endpoint
     }
 
     /**
+     * @link https://developers.cloudflare.com/api/resources/accounts/methods/get/
      * @throws InvalidClassException
      * @throws ErrorResponseException
      * @throws JsonException
@@ -43,5 +46,40 @@ class Accounts extends Endpoint
     {
         $response = $this->adapter->get('/accounts/' . $accountId);
         return $this->makeEntityResponse($response, Account::class);
+    }
+
+    /**
+     * @link https://developers.cloudflare.com/api/resources/accounts/methods/create/
+     * @throws InvalidClassException
+     * @throws ErrorResponseException
+     * @throws JsonException
+     */
+    public function create(array $data): EntityResponse
+    {
+        $response = $this->adapter->post('/accounts', $data);
+        return $this->makeEntityResponse($response, Account::class);
+    }
+
+    /**
+     * @link https://developers.cloudflare.com/api/resources/accounts/methods/update/
+     * @throws InvalidClassException
+     * @throws ErrorResponseException
+     * @throws JsonException
+     */
+    public function update(string $accountId, array $data): EntityResponse
+    {
+        $response = $this->adapter->put('/accounts/' . $accountId, $data);
+        return $this->makeEntityResponse($response, Account::class);
+    }
+
+    /**
+     * @link https://developers.cloudflare.com/api/resources/accounts/methods/update/
+     * @throws JsonException
+     * @throws ErrorResponseException
+     */
+    public function delete(string $accountId): ResponseInterface
+    {
+        $response = $this->adapter->delete('/accounts/' . $accountId);
+        return $this->processResponse($response);
     }
 }

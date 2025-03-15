@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace PlainSimple\Cloudflare\Auth;
 
-class ApiKeyAndEmail implements Auth
+class ApiKeyAndEmail implements AuthInterface
 {
     public function __construct(
         private string $email,

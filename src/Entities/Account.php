@@ -5,7 +5,7 @@ namespace PlainSimple\Cloudflare\Entities;
 use DateMalformedStringException;
 use DateTime;
 
-class Account extends Entity
+class Account extends AbstractEntity
 {
     /**
      * @var string identifier

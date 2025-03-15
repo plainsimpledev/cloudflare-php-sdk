@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace PlainSimple\Cloudflare\Responses;
 
 use JsonException;
-use PlainSimple\Cloudflare\Entities\Entity;
+use PlainSimple\Cloudflare\Entities\AbstractEntity;
 use PlainSimple\Cloudflare\Exceptions\InvalidClassException;
 use Psr\Http\Message\ResponseInterface;
 
@@ -24,8 +24,8 @@ class ListResponse
      */
     public function __construct(ResponseInterface $originalResponse, array $responseContents, string $entityClassName)
     {
-        if (!is_a($entityClassName, Entity::class, true)) {
-            throw new InvalidClassException($entityClassName . ' must implement ' . Entity::class);
+        if (!is_a($entityClassName, AbstractEntity::class, true)) {
+            throw new InvalidClassException($entityClassName . ' must implement ' . AbstractEntity::class);
         }
         $this->originalResponse = $originalResponse;
         $results = $responseContents['results'];

@@ -5,20 +5,33 @@ declare(strict_types=1);
 namespace PlainSimple\Cloudflare\Endpoints;
 
 use JsonException;
-use PlainSimple\Cloudflare\Adapters\Adapter;
+use PlainSimple\Cloudflare\Adapters\AdapterInterface;
 use PlainSimple\Cloudflare\Exceptions\ErrorResponseException;
 use PlainSimple\Cloudflare\Exceptions\InvalidClassException;
 use PlainSimple\Cloudflare\Responses\EntityResponse;
 use PlainSimple\Cloudflare\Responses\ListResponse;
 use Psr\Http\Message\ResponseInterface;
 
-abstract class Endpoint
+abstract class AbstractEndpoint
 {
     public const string DIRECTION_ASC = 'asc';
     public const string DIRECTION_DESC = 'desc';
 
-    public function __construct(protected Adapter $adapter)
+    public function __construct(protected AdapterInterface $adapter)
     {
+    }
+
+    /**
+     * @throws ErrorResponseException
+     * @throws JsonException
+     */
+    protected function processResponse(ResponseInterface $response): ResponseInterface
+    {
+        $responseContents = $this->getJsonContents($response);
+        if (!$responseContents['success']) {
+            throw new ErrorResponseException($response, $responseContents['errors'] ?? []);
+        }
+        return $response;
     }
 
     /**
@@ -54,7 +67,7 @@ abstract class Endpoint
     /**
      * @throws JsonException
      */
-    protected function getJsonContents(ResponseInterface $response): array
+    protected function getJsonContents(ResponseInterface $response): mixed
     {
         return json_decode(
             $response->getBody()->getContents(),

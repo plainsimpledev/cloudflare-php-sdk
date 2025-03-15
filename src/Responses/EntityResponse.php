@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace PlainSimple\Cloudflare\Responses;
 
-use PlainSimple\Cloudflare\Entities\Entity;
+use PlainSimple\Cloudflare\Entities\AbstractEntity;
 use PlainSimple\Cloudflare\Exceptions\InvalidClassException;
 use Psr\Http\Message\ResponseInterface;
 
 class EntityResponse
 {
-    private Entity $entity;
+    private AbstractEntity $entity;
 
     private ResponseInterface $originalResponse;
 
@@ -19,8 +19,8 @@ class EntityResponse
      */
     public function __construct(ResponseInterface $originalResponse, array $responseContents, string $entityClassName)
     {
-        if (!is_a($entityClassName, Entity::class, true)) {
-            throw new InvalidClassException($entityClassName . ' must implement ' . Entity::class);
+        if (!is_a($entityClassName, AbstractEntity::class, true)) {
+            throw new InvalidClassException($entityClassName . ' must implement ' . AbstractEntity::class);
         }
         $this->originalResponse = $originalResponse;
         $this->entity = $entityClassName::makeFromCloudflareData($responseContents['result']);
@@ -31,7 +31,7 @@ class EntityResponse
         return $this->originalResponse;
     }
 
-    public function getEntity(): Entity
+    public function getEntity(): AbstractEntity
     {
         return $this->entity;
     }

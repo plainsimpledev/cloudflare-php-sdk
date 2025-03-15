@@ -6,7 +6,7 @@ use GuzzleHttp\Exception\GuzzleException;
 use PHPUnit\Framework\TestCase;
 use PlainSimple\Cloudflare\Adapters\GuzzleAdapter;
 use PlainSimple\Cloudflare\Auth\ApiToken;
-use PlainSimple\Cloudflare\Auth\Auth;
+use PlainSimple\Cloudflare\Auth\AuthInterface;
 use PlainSimple\Cloudflare\Exceptions\InvalidRequestMethodException;
 use Psr\Http\Message\ResponseInterface;
 

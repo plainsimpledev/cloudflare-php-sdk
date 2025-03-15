@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace PlainSimple\Cloudflare\Adapters;
 
-use PlainSimple\Cloudflare\Auth\Auth;
+use PlainSimple\Cloudflare\Auth\AuthInterface;
 use Psr\Http\Message\ResponseInterface;
 
-interface Adapter
+interface AdapterInterface
 {
-    public function __construct(Auth $auth, string $baseUri);
+    public function __construct(AuthInterface $auth, string $baseUri);
 
     public function get(string $url, array $data = [], array $headers = []): ResponseInterface;
 

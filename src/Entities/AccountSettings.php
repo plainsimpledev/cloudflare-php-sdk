@@ -6,7 +6,7 @@ namespace PlainSimple\Cloudflare\Entities;
 
 use PlainSimple\Cloudflare\Enums\DefaultNameservers;
 
-class AccountSettings extends Entity
+class AccountSettings extends AbstractEntity
 {
     /**
      * @var string sets an abuse contact email to notify for abuse reports.
