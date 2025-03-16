@@ -10,26 +10,43 @@ class Account extends AbstractEntity
     /**
      * @var string identifier
      */
-    public string $id;
+    private string $id;
 
     /**
      * @var string account name
      */
-    public string $name;
+    private string $name;
 
     /**
      * @var DateTime timestamp for the creation of the account
      */
-    public DateTime $created_on;
+    private DateTime $created_on;
 
-    public AccountSettings $settings;
+    private AccountSettings $settings;
 
-    public function setSettings(mixed $value): void
+    public function getId(): string
     {
-        if (!($value instanceof AccountSettings)) {
-            $value = AccountSettings::makeFromCloudflareData($value);
-        }
-        $this->settings = $value;
+        return $this->id;
+    }
+
+    public function setId(string $id): void
+    {
+        $this->id = $id;
+    }
+
+    public function getName(): string
+    {
+        return $this->name;
+    }
+
+    public function setName(string $name): void
+    {
+        $this->name = $name;
+    }
+
+    public function getCreatedOn(): DateTime
+    {
+        return $this->created_on;
     }
 
     /**
@@ -41,5 +58,18 @@ class Account extends AbstractEntity
             $value = new DateTime($value);
         }
         $this->created_on = $value;
+    }
+
+    public function getSettings(): AccountSettings
+    {
+        return $this->settings;
+    }
+
+    public function setSettings(mixed $value): void
+    {
+        if (!($value instanceof AccountSettings)) {
+            $value = AccountSettings::makeFromCloudflareData($value);
+        }
+        $this->settings = $value;
     }
 }

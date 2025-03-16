@@ -28,12 +28,12 @@ class ListResponse
             throw new InvalidClassException($entityClassName . ' must implement ' . AbstractEntity::class);
         }
         $this->originalResponse = $originalResponse;
-        $results = $responseContents['results'];
+        $results = $responseContents['result'];
         foreach ($results as $result) {
             $this->items[] = $entityClassName::makeFromCloudflareData($result);
         }
 
-        $resultsInfo = $responseContents['results_info'];
+        $resultsInfo = $responseContents['result_info'];
 
         $this->count = $resultsInfo['count'];
         $this->page = $resultsInfo['page'];

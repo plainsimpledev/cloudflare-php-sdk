@@ -28,7 +28,7 @@ abstract class AbstractEndpoint
     protected function processResponse(ResponseInterface $response): ResponseInterface
     {
         $responseContents = $this->getJsonContents($response);
-        if (!$responseContents['success']) {
+        if (!isset($responseContents['success']) || !$responseContents['success']) {
             throw new ErrorResponseException($response, $responseContents['errors'] ?? []);
         }
         return $response;
@@ -42,7 +42,7 @@ abstract class AbstractEndpoint
     protected function makeListResponse(ResponseInterface $response, string $entityClassName): ListResponse
     {
         $responseContents = $this->getJsonContents($response);
-        if (!$responseContents['success']) {
+        if (!isset($responseContents['success']) || !$responseContents['success']) {
             throw new ErrorResponseException($response, $responseContents['errors'] ?? []);
         }
 
@@ -57,7 +57,7 @@ abstract class AbstractEndpoint
     protected function makeEntityResponse(ResponseInterface $response, string $entityClassName): EntityResponse
     {
         $responseContents = $this->getJsonContents($response);
-        if (!$responseContents['success']) {
+        if (!isset($responseContents['success']) || !$responseContents['success']) {
             throw new ErrorResponseException($response, $responseContents['errors'] ?? []);
         }
 
@@ -69,11 +69,8 @@ abstract class AbstractEndpoint
      */
     protected function getJsonContents(ResponseInterface $response): mixed
     {
-        return json_decode(
-            $response->getBody()->getContents(),
-            true,
-            512,
-            JSON_THROW_ON_ERROR
-        );
+        $contents = $response->getBody()->getContents();
+        $unescapedContents = stripslashes($contents);
+        return json_decode($unescapedContents, true, 512, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     }
 }

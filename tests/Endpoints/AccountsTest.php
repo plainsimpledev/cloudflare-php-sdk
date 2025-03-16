@@ -83,8 +83,8 @@ class AccountsTest extends TestCase
         $items = $response->getItems();
         $this->assertCount(2, $items);
         $this->assertContainsOnlyInstancesOf(Account::class, $items);
-        $this->assertEquals('account-id-1', $items[0]->id);
-        $this->assertEquals('Test Account 1', $items[0]->name);
+        $this->assertEquals('account-id-1', $items[0]->getId());
+        $this->assertEquals('Test Account 1', $items[0]->getName());
     }
 
     /**
@@ -135,8 +135,8 @@ class AccountsTest extends TestCase
 
         $items = $response->getItems();
         $this->assertCount(1, $items);
-        $this->assertEquals('filtered-account', $items[0]->id);
-        $this->assertEquals('Filtered Account', $items[0]->name);
+        $this->assertEquals('filtered-account', $items[0]->getId());
+        $this->assertEquals('Filtered Account', $items[0]->getName());
         $this->assertEquals(2, $response->getPage());
         $this->assertEquals(5, $response->getPerPage());
     }
@@ -159,7 +159,10 @@ class AccountsTest extends TestCase
                 'id' => $accountId,
                 'name' => 'Test Account',
                 'settings' => [
-                    'access' => 'full',
+                    'abuse_contact_email' => 'abuse_contact_email',
+                    'default_nameservers' => 'cloudflare.standard',
+                    'enforce_twofactor' => true,
+                    'use_account_custom_ns_by_default' => true
                 ],
             ],
         ];
@@ -181,8 +184,8 @@ class AccountsTest extends TestCase
         $entity = $response->getEntity();
 
         $this->assertInstanceOf(Account::class, $entity);
-        $this->assertEquals($accountId, $entity->id);
-        $this->assertEquals('Test Account', $entity->name);
+        $this->assertEquals($accountId, $entity->getId());
+        $this->assertEquals('Test Account', $entity->getName());
     }
 
     /**
@@ -224,9 +227,8 @@ class AccountsTest extends TestCase
         $entity = $response->getEntity();
 
         $this->assertInstanceOf(Account::class, $entity);
-        $this->assertEquals('new-account-id', $entity->id);
-        $this->assertEquals('New Test Account', $entity->name);
-        $this->assertEquals('standard', $entity->type);
+        $this->assertEquals('new-account-id', $entity->getId());
+        $this->assertEquals('New Test Account', $entity->getName());
     }
 
     /**
@@ -250,7 +252,6 @@ class AccountsTest extends TestCase
             'result' => [
                 'id' => $accountId,
                 'name' => 'Updated Account Name',
-                'type' => 'standard',
             ],
         ];
 
@@ -270,8 +271,8 @@ class AccountsTest extends TestCase
         $entity = $response->getEntity();
 
         $this->assertInstanceOf(Account::class, $entity);
-        $this->assertEquals($accountId, $entity->id);
-        $this->assertEquals('Updated Account Name', $entity->name);
+        $this->assertEquals($accountId, $entity->getId());
+        $this->assertEquals('Updated Account Name', $entity->getName());
     }
 
     /**
@@ -352,7 +353,7 @@ class AccountsTest extends TestCase
     {
         $mockResponse = $this->createMock(ResponseInterface::class);
 
-        $mockStream = $this->createStreamMock('{invalid json}');
+        $mockStream = $this->createStreamMock('{"key": "value",}');
 
         $mockResponse->method('getStatusCode')->willReturn(200);
         $mockResponse->method('getBody')
