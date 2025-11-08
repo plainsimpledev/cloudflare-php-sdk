@@ -2,9 +2,6 @@
 
 declare(strict_types=1);
 
-namespace PlainSimple\Cloudflare\Tests\Endpoints;
-
-use JsonException;
 use PHPUnit\Framework\MockObject\Exception;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;

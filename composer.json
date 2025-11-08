@@ -2,6 +2,7 @@
     "name": "plainsimple/cloudflare-sdk-php",
     "description": "PHP SDK for working with Cloudflare API",
     "type": "library",
+    "version": "1.0.0",
     "authors": [
         {
             "name": "Viacheslav Zhabonos",
