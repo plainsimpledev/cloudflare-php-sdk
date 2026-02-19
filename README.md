@@ -1,15 +1,21 @@
 # Cloudflare PHP SDK
 
-A PHP library for interacting with [Cloudflare API v4](https://developers.cloudflare.com/api/). This SDK simplifies making requests to Cloudflare’s API, managing zones, DNS records, and other resources.
+[![CI](https://github.com/plainsimple/cloudflare-php-sdk/actions/workflows/ci.yml/badge.svg)](https://github.com/plainsimple/cloudflare-php-sdk/actions)
+![PHP Version](https://img.shields.io/badge/PHP-%3E%3D8.3-777BB4.svg)
+[![License](https://img.shields.io/badge/license-MIT-brightgreen.svg)](LICENSE)
 
-## Supported endpoints
-- Zones
-- Rulesets
-- Rules
-- Turnstiles
-- Accounts
+A PHP library for interacting with [Cloudflare API v4](https://developers.cloudflare.com/api/). This SDK simplifies making requests to Cloudflare's API, managing zones, DNS records, and other resources.
+
+## Supported Endpoints
+
+- ✅ **Accounts** - Full CRUD operations
+- 🔄 **Zones** - Coming soon
+- 🔄 **Rulesets** - Coming soon
+- 🔄 **Rules** - Coming soon
+- 🔄 **Turnstiles** - Coming soon
 
 ## Requirements
+
 - PHP >= 8.3
 - [ext-json](https://www.php.net/manual/en/book.json.php)
 - [Guzzle](https://github.com/guzzle/guzzle) for HTTP requests
@@ -19,7 +25,7 @@ A PHP library for interacting with [Cloudflare API v4](https://developers.cloudf
 Install via [Composer](https://getcomposer.org/):
 
 ```bash
-composer require your-vendor/cloudflare-php-sdk
+composer require plainsimple/cloudflare-sdk-php
 ```
 
 ## Usage
@@ -27,39 +33,51 @@ composer require your-vendor/cloudflare-php-sdk
 ### Initialize the Client
 
 ```php
-use YourVendor\Cloudflare\Client;
+use PlainSimple\Cloudflare\Client;
 
 $client = new Client('your-cloudflare-api-token');
 ```
 
-### List Zones
+### List Accounts
 
 ```php
-$zones = $client->zones()->list();
+$accounts = $client->accounts()->list();
 
-foreach ($zones as $zone) {
-    echo $zone['name'] . PHP_EOL;
+foreach ($accounts as $account) {
+    echo $account->name . PHP_EOL;
 }
 ```
 
-### Create a DNS Record
+### Create an Account
 
 ```php
-$dnsRecord = $client->dns()->create('zone-id', [
-    'type' => 'A',
-    'name' => 'example.com',
-    'content' => '192.0.2.1',
-    'ttl' => 3600,
+$account = $client->accounts()->create([
+    'name' => 'My Account',
+    'type' => 'standard',
 ]);
 
-print_r($dnsRecord);
+echo $account->id;
 ```
 
-### Purge Cache
+### Get Account by ID
 
 ```php
-$response = $client->cache()->purge('zone-id');
-print_r($response);
+$account = $client->accounts()->get('account-id');
+echo $account->name;
+```
+
+### Update Account
+
+```php
+$account = $client->accounts()->update('account-id', [
+    'name' => 'Updated Name',
+]);
+```
+
+### Delete Account
+
+```bash
+$client->accounts()->delete('account-id');
 ```
 
 ## Configuration
@@ -67,26 +85,80 @@ print_r($response);
 The client uses `Guzzle` under the hood. You can customize the HTTP client if needed:
 
 ```php
-use GuzzleHttp\Client as GuzzleClient;
-use YourVendor\Cloudflare\Client;
+use PlainSimple\Cloudflare\Adapters\GuzzleAdapter;
+use PlainSimple\Cloudflare\Client;
 
-$guzzle = new GuzzleClient(['timeout' => 5]);
-$client = new Client('your-cloudflare-api-token', $guzzle);
+$adapter = new GuzzleAdapter(['timeout' => 5]);
+$client = new Client('your-cloudflare-api-token', $adapter);
 ```
 
-## Testing
+## Development
+
+### Setup
 
 ```bash
-composer test
+git clone https://github.com/plainsimple/cloudflare-php-sdk.git
+cd cloudflare-php-sdk
+composer install
 ```
+
+### Available Commands
+
+```bash
+# Run all checks (lint, analyse, test)
+composer check
+
+# Run tests only
+composer test
+
+# Run tests with HTML coverage report
+composer test-coverage
+
+# Check code style
+composer lint
+
+# Fix code style automatically
+composer lint-fix
+
+# Run static analysis
+composer analyse
+
+# Generate API documentation
+composer docs
+```
+
+### Code Quality
+
+This project maintains 100% code coverage and uses:
+- **PHPStan** (level 7) for static analysis
+- **PHP CS Fixer** for code style enforcement
+- **PHPUnit** for testing
+
+## Architecture
+
+This SDK follows several design patterns:
+
+- **Adapter Pattern** - HTTP client abstraction (GuzzleAdapter implements AdapterInterface)
+- **Repository Pattern** - Endpoints act as repositories (Accounts, Zones, etc.)
+- **Factory Pattern** - Entities use `makeFromCloudflareData()` to hydrate from API responses
+- **Entity Pattern** - Magic property access with camelCase to snake_case conversion
+
+See [AGENTS.md](AGENTS.md) for detailed guidelines on adding new endpoints.
 
 ## Contributing
 
+Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
+
 1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/YourFeature`)
-3. Commit your changes (`git commit -m 'Add some feature'`)
-4. Push to the branch (`git push origin feature/YourFeature`)
-5. Open a Pull Request
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Run checks: `composer check`
+4. Commit your changes (`git commit -m 'Add some amazing feature'`)
+5. Push to the branch (`git push origin feature/amazing-feature`)
+6. Open a Pull Request
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for version history and changes.
 
 ## License
 
