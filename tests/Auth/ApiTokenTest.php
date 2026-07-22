@@ -12,8 +12,6 @@ class ApiTokenTest extends TestCase
         $auth = new ApiToken('zKq9RDO6PbCjs6PRUXF3BoqFi3QdwY36C2VfOaRy');
         $headers = $auth->getHeaders();
 
-        $this->assertIsArray($headers);
-
         $this->assertArrayHasKey('Authorization', $headers);
 
         $this->assertEquals('Bearer zKq9RDO6PbCjs6PRUXF3BoqFi3QdwY36C2VfOaRy', $headers['Authorization']);

@@ -12,7 +12,6 @@ class UnauthorizedTest extends TestCase
         $auth = new Unauthorized();
         $headers = $auth->getHeaders();
 
-        $this->assertIsArray($headers);
         $this->assertEmpty($headers);
     }
 }

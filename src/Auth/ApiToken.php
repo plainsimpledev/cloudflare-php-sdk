@@ -10,6 +10,7 @@ class ApiToken implements AuthInterface
     {
     }
 
+    /** @return array<string, string> */
     public function getHeaders(): array
     {
         return [

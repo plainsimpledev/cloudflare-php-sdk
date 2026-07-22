@@ -2,7 +2,8 @@
 
 declare(strict_types=1);
 
-use PHPUnit\Framework\MockObject\Exception;
+use GuzzleHttp\Psr7\Response;
+use GuzzleHttp\Psr7\Utils;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use PlainSimple\Cloudflare\Adapters\AdapterInterface;
@@ -10,372 +11,301 @@ use PlainSimple\Cloudflare\Endpoints\AbstractEndpoint;
 use PlainSimple\Cloudflare\Endpoints\Accounts;
 use PlainSimple\Cloudflare\Entities\Account;
 use PlainSimple\Cloudflare\Exceptions\ErrorResponseException;
-use PlainSimple\Cloudflare\Exceptions\InvalidClassException;
-use Psr\Http\Message\ResponseInterface;
-use Psr\Http\Message\StreamInterface;
 
-class AccountsTest extends TestCase
+final class AccountsTest extends TestCase
 {
     private Accounts $accounts;
-    private MockObject|AdapterInterface $adapter;
+    private AdapterInterface&MockObject $adapter;
 
-    /**
-     * @throws Exception
-     */
     protected function setUp(): void
     {
         $this->adapter = $this->createMock(AdapterInterface::class);
         $this->accounts = new Accounts($this->adapter);
     }
 
-    /**
-     * @throws InvalidClassException
-     * @throws ErrorResponseException
-     * @throws JsonException
-     * @throws Exception
-     */
-    public function testListAccountsWithDefaultParameters(): void
+    public function testListsAccountsUsingRelativeCollectionRouteAndNonNullQuery(): void
     {
-        $mockResponse = $this->createMock(ResponseInterface::class);
-        $responseData = [
+        $response = $this->jsonResponse([
             'success' => true,
             'errors' => [],
             'messages' => [],
             'result' => [
-                [
-                    'id' => 'account-id-1',
-                    'name' => 'Test Account 1',
-                ],
-                [
-                    'id' => 'account-id-2',
-                    'name' => 'Test Account 2',
-                ],
+                ['id' => 'account-id-1', 'name' => 'Test Account 1', 'type' => 'standard'],
+                ['id' => 'account-id-2', 'name' => 'Test Account 2', 'type' => 'enterprise'],
             ],
             'result_info' => [
                 'page' => 1,
                 'per_page' => 20,
-                'total_pages' => 1,
                 'count' => 2,
                 'total_count' => 2,
             ],
-        ];
-
-        $mockStream = $this->createStreamMock($responseData);
-
-        $mockResponse->method('getStatusCode')->willReturn(200);
-        $mockResponse->method('getBody')
-            ->willReturn($mockStream);
+        ]);
 
         $this->adapter->expects($this->once())
             ->method('get')
-            ->with('/accounts/list', [
+            ->with('accounts', [
                 'page' => 1,
                 'per_page' => 20,
                 'direction' => 'asc',
             ])
-            ->willReturn($mockResponse);
+            ->willReturn($response);
 
-        $response = $this->accounts->list();
+        $list = $this->accounts->list();
 
-        $items = $response->getItems();
-        $this->assertCount(2, $items);
-        $this->assertContainsOnlyInstancesOf(Account::class, $items);
-        $this->assertEquals('account-id-1', $items[0]->getId());
-        $this->assertEquals('Test Account 1', $items[0]->getName());
+        $this->assertCount(2, $list->getItems());
+        $this->assertContainsOnlyInstancesOf(Account::class, $list->getItems());
+        $this->assertSame('account-id-1', $list->getItems()[0]->getId());
+        $this->assertSame(2, $list->getTotalCount());
     }
 
-    /**
-     * @throws InvalidClassException
-     * @throws ErrorResponseException
-     * @throws JsonException
-     * @throws Exception
-     */
-    public function testListAccountsWithCustomParameters(): void
+    public function testListPreservesEmptyNameAndPaginationValues(): void
     {
-        $mockResponse = $this->createMock(ResponseInterface::class);
-        $responseData = [
+        $response = $this->jsonResponse([
             'success' => true,
-            'errors' => [],
-            'messages' => [],
-            'result' => [
-                [
-                    'id' => 'filtered-account',
-                    'name' => 'Filtered Account',
-                ],
-            ],
+            'result' => [],
             'result_info' => [
-                'page' => 2,
-                'per_page' => 5,
-                'total_pages' => 3,
-                'count' => 1,
-                'total_count' => 11,
+                'page' => 0,
+                'per_page' => 0,
+                'count' => 0,
+                'total_count' => 0,
             ],
-        ];
-
-        $mockStream = $this->createStreamMock($responseData);
-
-        $mockResponse->method('getStatusCode')->willReturn(200);
-        $mockResponse->method('getBody')
-            ->willReturn($mockStream);
+        ]);
 
         $this->adapter->expects($this->once())
             ->method('get')
-            ->with('/accounts/list', [
-                'name' => 'Filtered',
-                'page' => 2,
-                'per_page' => 5,
-                'direction' => 'desc',
+            ->with('accounts', [
+                'name' => '',
+                'page' => 0,
+                'per_page' => 0,
+                'direction' => AbstractEndpoint::DIRECTION_DESC,
             ])
-            ->willReturn($mockResponse);
+            ->willReturn($response);
 
-        $response = $this->accounts->list('Filtered', 2, 5, AbstractEndpoint::DIRECTION_DESC);
+        $list = $this->accounts->list('', 0, 0, AbstractEndpoint::DIRECTION_DESC);
 
-        $items = $response->getItems();
-        $this->assertCount(1, $items);
-        $this->assertEquals('filtered-account', $items[0]->getId());
-        $this->assertEquals('Filtered Account', $items[0]->getName());
-        $this->assertEquals(2, $response->getPage());
-        $this->assertEquals(5, $response->getPerPage());
+        $this->assertSame(0, $list->getPage());
+        $this->assertSame(0, $list->getPerPage());
     }
 
-    /**
-     * @throws InvalidClassException
-     * @throws ErrorResponseException
-     * @throws JsonException
-     * @throws Exception
-     */
-    public function testGetAccount(): void
+    public function testGetsAccountAndPreservesOriginalBody(): void
     {
-        $accountId = 'test-account-id';
-        $mockResponse = $this->createMock(ResponseInterface::class);
-        $responseData = [
+        $accountId = '../account/id?view=full#details';
+        $body = $this->jsonBody([
             'success' => true,
             'errors' => [],
-            'messages' => [],
             'result' => [
                 'id' => $accountId,
                 'name' => 'Test Account',
-                'settings' => [
-                    'abuse_contact_email' => 'abuse_contact_email',
-                    'default_nameservers' => 'cloudflare.standard',
-                    'enforce_twofactor' => true,
-                    'use_account_custom_ns_by_default' => true
-                ],
+                'type' => 'standard',
             ],
-        ];
-
-        $mockStream = $this->createStreamMock($responseData);
-
-        $mockResponse->method('getStatusCode')->willReturn(200);
-        $mockResponse->method('getBody')
-            ->willReturn($mockStream);
+        ]);
+        $response = new Response(200, [], Utils::streamFor($body));
 
         $this->adapter->expects($this->once())
             ->method('get')
-            ->with('/accounts/' . $accountId)
-            ->willReturn($mockResponse);
+            ->with('accounts/..%2Faccount%2Fid%3Fview%3Dfull%23details')
+            ->willReturn($response);
 
-        $response = $this->accounts->get($accountId);
+        $entityResponse = $this->accounts->get($accountId);
 
-        /** @var Account $entity */
-        $entity = $response->getEntity();
-
-        $this->assertInstanceOf(Account::class, $entity);
-        $this->assertEquals($accountId, $entity->getId());
-        $this->assertEquals('Test Account', $entity->getName());
+        $this->assertSame($accountId, $entityResponse->getEntity()->getId());
+        $this->assertSame($body, $entityResponse->getOriginalResponse()->getBody()->getContents());
     }
 
-    /**
-     * @throws InvalidClassException
-     * @throws ErrorResponseException
-     * @throws JsonException
-     * @throws Exception
-     */
-    public function testCreateAccount(): void
+    public function testGetRejectsWhitespaceAccountId(): void
     {
-        $accountData = [
-            'name' => 'New Test Account',
-        ];
+        $this->adapter->expects($this->never())->method('get');
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Account ID must not be empty.');
 
-        $mockResponse = $this->createMock(ResponseInterface::class);
-        $responseData = [
+        $this->accounts->get('   ');
+    }
+
+    public function testCreatesAccountFromCreatePayload(): void
+    {
+        $account = Account::forCreate('New Account');
+        $response = $this->jsonResponse([
             'success' => true,
-            'errors' => [],
-            'messages' => [],
             'result' => [
                 'id' => 'new-account-id',
-                'name' => 'New Test Account',
+                'name' => 'New Account',
+                'type' => 'standard',
             ],
-        ];
-
-        $mockStream = $this->createStreamMock($responseData);
-
-        $mockResponse->method('getStatusCode')->willReturn(200);
-        $mockResponse->method('getBody')
-            ->willReturn($mockStream);
+        ], 201);
 
         $this->adapter->expects($this->once())
             ->method('post')
-            ->with('/accounts', $accountData)
-            ->willReturn($mockResponse);
+            ->with('accounts', [
+                'name' => 'New Account',
+                'type' => 'standard',
+            ])
+            ->willReturn($response);
 
-        $response = $this->accounts->create($accountData);
+        $created = $this->accounts->create($account);
 
-        $entity = $response->getEntity();
-
-        $this->assertInstanceOf(Account::class, $entity);
-        $this->assertEquals('new-account-id', $entity->getId());
-        $this->assertEquals('New Test Account', $entity->getName());
+        $this->assertSame('new-account-id', $created->getEntity()->getId());
+        $this->assertSame(201, $created->getOriginalResponse()->getStatusCode());
     }
 
-    /**
-     * @throws InvalidClassException
-     * @throws ErrorResponseException
-     * @throws JsonException
-     * @throws Exception
-     */
-    public function testUpdateAccount(): void
+    public function testUpdatesAccountByIdUsingReplacePayload(): void
     {
-        $accountId = 'update-account-id';
-        $updateData = [
-            'name' => 'Updated Account Name',
-        ];
-
-        $mockResponse = $this->createMock(ResponseInterface::class);
-        $responseData = [
+        $accountId = '../account/id?replace=true';
+        $account = Account::makeFromCloudflareData([
+            'id' => $accountId,
+            'name' => 'Original',
+            'type' => 'enterprise',
+        ]);
+        $account->setName('Updated');
+        $account->setSettings(['enforce_twofactor' => true]);
+        $response = $this->jsonResponse([
             'success' => true,
-            'errors' => [],
-            'messages' => [],
             'result' => [
                 'id' => $accountId,
-                'name' => 'Updated Account Name',
+                'name' => 'Updated',
+                'type' => 'enterprise',
+                'settings' => ['enforce_twofactor' => true],
             ],
-        ];
-
-        $mockStream = $this->createStreamMock($responseData);
-
-        $mockResponse->method('getStatusCode')->willReturn(200);
-        $mockResponse->method('getBody')
-            ->willReturn($mockStream);
+        ]);
 
         $this->adapter->expects($this->once())
             ->method('put')
-            ->with('/accounts/' . $accountId, $updateData)
-            ->willReturn($mockResponse);
+            ->with('accounts/..%2Faccount%2Fid%3Freplace%3Dtrue', [
+                'id' => $accountId,
+                'name' => 'Updated',
+                'type' => 'enterprise',
+                'settings' => ['enforce_twofactor' => true],
+            ])
+            ->willReturn($response);
 
-        $response = $this->accounts->update($accountId, $updateData);
+        $updated = $this->accounts->update($account);
 
-        $entity = $response->getEntity();
-
-        $this->assertInstanceOf(Account::class, $entity);
-        $this->assertEquals($accountId, $entity->getId());
-        $this->assertEquals('Updated Account Name', $entity->getName());
+        $this->assertSame('Updated', $updated->getEntity()->getName());
     }
 
-    /**
-     * @throws ErrorResponseException
-     * @throws JsonException
-     * @throws Exception
-     */
-    public function testDeleteAccount(): void
+    public function testUpdateRejectsAccountWithoutId(): void
     {
-        $accountId = 'delete-account-id';
-        $mockResponse = $this->createMock(ResponseInterface::class);
-        $responseData = [
+        $this->adapter->expects($this->never())->method('put');
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Account must have an id.');
+
+        $this->accounts->update(Account::forCreate('Missing ID'));
+    }
+
+    public function testUpdateRejectsEmptyAccountId(): void
+    {
+        $account = Account::forCreate('Missing ID');
+        $account->setId('');
+        $this->adapter->expects($this->never())->method('put');
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Account ID must not be empty.');
+
+        $this->accounts->update($account);
+    }
+
+    public function testDeletesAccountEntityAndReturnsActionResponse(): void
+    {
+        $accountId = '../account/id?delete=true';
+        $account = Account::makeFromCloudflareData([
+            'id' => $accountId,
+            'name' => 'Delete Me',
+            'type' => 'standard',
+        ]);
+        $body = $this->jsonBody([
             'success' => true,
             'errors' => [],
-            'messages' => [],
-        ];
-
-        $mockStream = $this->createStreamMock($responseData);
-
-        $mockResponse->method('getStatusCode')->willReturn(200);
-        $mockResponse->method('getBody')
-            ->willReturn($mockStream);
+            'result' => ['id' => $accountId],
+        ]);
+        $response = new Response(200, [], Utils::streamFor($body));
 
         $this->adapter->expects($this->once())
             ->method('delete')
-            ->with('/accounts/' . $accountId)
-            ->willReturn($mockResponse);
+            ->with('accounts/..%2Faccount%2Fid%3Fdelete%3Dtrue')
+            ->willReturn($response);
 
-        $response = $this->accounts->delete($accountId);
+        $deleted = $this->accounts->delete($account);
 
-        $this->assertEquals(200, $response->getStatusCode());
-        $this->assertEquals(json_encode($responseData, JSON_THROW_ON_ERROR), $response->getBody()->getContents());
+        $this->assertSame(['id' => $accountId], $deleted->getResult());
+        $this->assertSame($body, $deleted->getOriginalResponse()->getBody()->getContents());
     }
 
-    /**
-     * @throws InvalidClassException
-     * @throws ErrorResponseException
-     * @throws JsonException
-     * @throws Exception
-     */
-    public function testErrorResponseException(): void
+    public function testDeletesAccountByStringId(): void
     {
-        $mockResponse = $this->createMock(ResponseInterface::class);
-        $responseData = [
+        $accountId = '../account/id?delete=true';
+        $response = new Response(204);
+
+        $this->adapter->expects($this->once())
+            ->method('delete')
+            ->with('accounts/..%2Faccount%2Fid%3Fdelete%3Dtrue')
+            ->willReturn($response);
+
+        $deleted = $this->accounts->delete($accountId);
+
+        $this->assertNull($deleted->getResult());
+        $this->assertSame(204, $deleted->getOriginalResponse()->getStatusCode());
+    }
+
+    public function testDeleteRejectsAccountEntityWithoutId(): void
+    {
+        $this->adapter->expects($this->never())->method('delete');
+        $this->expectException(InvalidArgumentException::class);
+
+        $this->accounts->delete(Account::forCreate('Missing ID'));
+    }
+
+    public function testDeleteRejectsEmptyStringId(): void
+    {
+        $this->adapter->expects($this->never())->method('delete');
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Account ID must not be empty.');
+
+        $this->accounts->delete('');
+    }
+
+    public function testApiErrorThrowsEvenForSuccessfulHttpStatus(): void
+    {
+        $response = $this->jsonResponse([
             'success' => false,
             'errors' => [
-                [
-                    'code' => 1003,
-                    'message' => 'Invalid request parameter',
-                ],
+                ['code' => 1003, 'message' => 'Invalid request parameter'],
             ],
             'messages' => [],
-        ];
-
-        $mockStream = $this->createStreamMock($responseData);
-
-        $mockResponse->method('getStatusCode')->willReturn(400);
-        $mockResponse->method('getBody')
-            ->willReturn($mockStream);
+        ]);
 
         $this->adapter->expects($this->once())
             ->method('get')
-            ->with('/accounts/invalid-id')
-            ->willReturn($mockResponse);
+            ->with('accounts/invalid-id')
+            ->willReturn($response);
 
         $this->expectException(ErrorResponseException::class);
+        $this->expectExceptionCode(1003);
+        $this->expectExceptionMessage('Invalid request parameter');
 
         $this->accounts->get('invalid-id');
     }
 
-    /**
-     * @throws InvalidClassException
-     * @throws ErrorResponseException
-     * @throws JsonException
-     * @throws Exception
-     */
-    public function testJsonException(): void
+    public function testMalformedJsonThrowsJsonException(): void
     {
-        $mockResponse = $this->createMock(ResponseInterface::class);
-
-        $mockStream = $this->createStreamMock('{"key": "value",}');
-
-        $mockResponse->method('getStatusCode')->willReturn(200);
-        $mockResponse->method('getBody')
-            ->willReturn($mockStream);
+        $response = new Response(200, [], Utils::streamFor('{"success":'));
 
         $this->adapter->expects($this->once())
             ->method('get')
-            ->with('/accounts/json-error')
-            ->willReturn($mockResponse);
+            ->with('accounts/malformed')
+            ->willReturn($response);
 
         $this->expectException(JsonException::class);
 
-        $this->accounts->get('json-error');
+        $this->accounts->get('malformed');
     }
 
-    /**
-     * @throws Exception
-     * @throws JsonException
-     */
-    private function createStreamMock(mixed $responseData): StreamInterface
+    /** @param array<string, mixed> $envelope */
+    private function jsonResponse(array $envelope, int $status = 200): Response
     {
-        $mockStream = $this->createMock(StreamInterface::class);
-        $mockStream->method('getContents')
-            ->willReturn(json_encode($responseData, JSON_THROW_ON_ERROR));
+        return new Response($status, [], Utils::streamFor($this->jsonBody($envelope)));
+    }
 
-        return $mockStream;
+    /** @param array<string, mixed> $envelope */
+    private function jsonBody(array $envelope): string
+    {
+        return json_encode($envelope, JSON_THROW_ON_ERROR);
     }
 }

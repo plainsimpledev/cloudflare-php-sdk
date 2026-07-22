@@ -3,7 +3,6 @@
     "description": "PHP SDK for working with Cloudflare API",
     "type": "library",
     "license": "MIT",
-    "version": "0.1.0",
     "authors": [
         {
             "name": "Viacheslav Zhabonos",
@@ -14,7 +13,8 @@
         "ext-json": "*",
         "php": ">=8.3",
         "psr/http-message": "^2.0",
-        "guzzlehttp/guzzle": "^7.9",
+        "guzzlehttp/guzzle": "^7.15.1",
+        "guzzlehttp/psr7": "^2.12.3",
         "fig/http-message-util": "^1.1"
     },
     "require-dev": {
@@ -38,7 +38,7 @@
         "test-coverage": "phpunit --coverage-html coverage",
         "lint": "php-cs-fixer fix --dry-run --diff",
         "lint-fix": "php-cs-fixer fix",
-        "analyse": "phpstan analyse",
+        "analyse": "phpstan analyse --memory-limit=512M",
         "docs": "phpdoc",
         "check": [
             "@lint",

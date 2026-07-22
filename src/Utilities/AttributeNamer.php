@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace PlainSimple\Cloudflare\Utilities;
 
 final class AttributeNamer
@@ -13,6 +15,17 @@ final class AttributeNamer
     public static function getGetterName(string $attributeName): string
     {
         return 'get' . str_replace('_', '', ucwords($attributeName, '_'));
+    }
+
+    /**
+     * Convert snake_case to camelCase for boolean getter method names
+     *
+     * @param string $attributeName Snake case attribute name
+     * @return string Boolean getter method name in camelCase
+     */
+    public static function getBooleanGetterName(string $attributeName): string
+    {
+        return 'is' . str_replace('_', '', ucwords($attributeName, '_'));
     }
 
     /**

@@ -10,5 +10,3 @@ parameters:
         - vendor
     phpVersion: 80300
     treatPhpDocTypesAsCertain: false
-    checkMissingIterableValueType: false
-    checkGenericClassInNonGenericObjectType: false

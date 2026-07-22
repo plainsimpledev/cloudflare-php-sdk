@@ -1,444 +1,54 @@
-# Agent Guidelines for Cloudflare PHP SDK
-
-This document provides comprehensive guidelines for AI agents working with this project.
-
-## Project Overview
-
-**Name**: Cloudflare PHP SDK  
-**Purpose**: A PHP SDK for interacting with Cloudflare API v4  
-**Language**: PHP 8.3+  
-**Type**: Library/SDK  
-**Namespace**: `PlainSimple\Cloudflare\`  
-**PSR-4 Autoloading**: `src/` → `PlainSimple\Cloudflare\`
-
-## Architecture Patterns
-
-### 1. Adapter Pattern (HTTP Client)
-
-The SDK uses the Adapter pattern to abstract HTTP client implementations:
-
-- **Interface**: `AdapterInterface`
-- **Implementation**: `GuzzleAdapter` (default)
-- **Purpose**: Allow different HTTP clients to be used interchangeably
-
-```php
-// Example: Custom adapter implementation
-class MyAdapter implements AdapterInterface {
-    public function request(string $method, string $uri, array $headers = [], ?string $body = null): ResponseInterface {
-        // Your implementation
-    }
-}
-```
-
-### 2. Repository Pattern (Endpoints)
-
-Each API resource has an endpoint class acting as a repository:
-
-- **Base Class**: `AbstractEndpoint`
-- **Current Implementations**: `Accounts`
-- **Pattern**: Each endpoint handles CRUD operations for its resource
-
-```php
-// Adding a new endpoint
-class Zones extends AbstractEndpoint {
-    public function list(): ListResponse { /* ... */ }
-    public function get(string $id): EntityResponse { /* ... */ }
-    public function create(array $data): EntityResponse { /* ... */ }
-    public function update(string $id, array $data): EntityResponse { /* ... */ }
-    public function delete(string $id): bool { /* ... */ }
-}
-```
-
-### 3. Factory Pattern (Entities)
-
-Entities use a static factory method to create instances from API data:
-
-```php
-class Account extends AbstractEntity {
-    public static function makeFromCloudflareData(array $data): static {
-        $instance = new self();
-        $instance->id = $data['id'];
-        $instance->name = $data['name'];
-        // ... map other fields
-        return $instance;
-    }
-}
-```
-
-### 4. Entity Pattern
-
-Entities represent API resources with magic property access:
-
-- **Base Class**: `AbstractEntity`
-- **Trait**: `EntityTrait` provides `__get`, `__set`, `__isset`
-- **Naming**: Converts snake_case API fields to camelCase PHP properties
-
-## Code Conventions
-
-### PHP Version Requirements
-- **Minimum**: PHP 8.3
-- **Type Declarations**: Strict mode required (`declare(strict_types=1)`)
-- **Readonly Classes**: Use where appropriate for value objects
-- **Union Types**: Use when applicable
-
-### Naming Conventions
-- **Classes**: PascalCase (e.g., `Account`, `ApiToken`)
-- **Methods**: camelCase (e.g., `makeFromCloudflareData`)
-- **Properties**: camelCase in code, snake_case in API
-- **Constants**: UPPER_SNAKE_CASE
-- **Files**: Match class name exactly
-
-### File Organization
-```
-src/
-├── Adapters/          # HTTP client adapters
-├── Auth/              # Authentication methods
-├── Endpoints/         # API endpoint implementations
-├── Entities/          # Data entities
-├── Enums/             # PHP enums
-├── Exceptions/        # Custom exceptions
-├── Responses/         # Response wrappers
-├── Traits/            # Reusable traits
-├── Utilities/         # Helper classes
-└── Client.php         # Main client class
-
-tests/
-├── Adapters/          # Adapter tests
-├── Auth/              # Authentication tests
-└── Endpoints/         # Endpoint tests
-```
-
-### Documentation Standards
-- **All public methods** must have PHPDoc blocks
-- **Class-level** documentation required
-- **Type hints** required for all parameters and return types
-- **@throws** tags for exceptions
-
-## How to Add New Endpoints
-
-### Step 1: Create Entity
-
-```php
-// src/Entities/Zone.php
-<?php
-declare(strict_types=1);
-
-namespace PlainSimple\Cloudflare\Entities;
-
-readonly class Zone extends AbstractEntity {
-    public string $id;
-    public string $name;
-    public string $status;
-    
-    public static function makeFromCloudflareData(array $data): static {
-        $instance = new self();
-        $instance->id = $data['id'];
-        $instance->name = $data['name'];
-        $instance->status = $data['status'];
-        return $instance;
-    }
-}
-```
-
-### Step 2: Create Endpoint
-
-```php
-// src/Endpoints/Zones.php
-<?php
-declare(strict_types=1);
-
-namespace PlainSimple\Cloudflare\Endpoints;
-
-use PlainSimple\Cloudflare\Entities\Zone;
-use PlainSimple\Cloudflare\Responses\EntityResponse;
-use PlainSimple\Cloudflare\Responses\ListResponse;
-
-readonly class Zones extends AbstractEndpoint {
-    
-    public function list(): ListResponse {
-        $response = $this->adapter->request(
-            'GET',
-            $this->baseUri . '/zones',
-            $this->getAuthHeaders()
-        );
-        
-        return new ListResponse($response, Zone::class);
-    }
-    
-    public function get(string $id): EntityResponse {
-        $response = $this->adapter->request(
-            'GET',
-            $this->baseUri . '/zones/' . $id,
-            $this->getAuthHeaders()
-        );
-        
-        return new EntityResponse($response, Zone::class);
-    }
-    
-    public function create(array $data): EntityResponse {
-        $response = $this->adapter->request(
-            'POST',
-            $this->baseUri . '/zones',
-            $this->getAuthHeaders(),
-            json_encode($data)
-        );
-        
-        return new EntityResponse($response, Zone::class);
-    }
-    
-    public function update(string $id, array $data): EntityResponse {
-        $response = $this->adapter->request(
-            'PATCH',
-            $this->baseUri . '/zones/' . $id,
-            $this->getAuthHeaders(),
-            json_encode($data)
-        );
-        
-        return new EntityResponse($response, Zone::class);
-    }
-    
-    public function delete(string $id): bool {
-        $response = $this->adapter->request(
-            'DELETE',
-            $this->baseUri . '/zones/' . $id,
-            $this->getAuthHeaders()
-        );
-        
-        return $response->getStatusCode() === 200;
-    }
-}
-```
-
-### Step 3: Add to Client
-
-```php
-// src/Client.php
-public function zones(): Endpoints\Zones {
-    return new Endpoints\Zones($this->adapter, $this->auth);
-}
-```
-
-### Step 4: Create Tests
-
-```php
-// tests/Endpoints/ZonesTest.php
-<?php
-declare(strict_types=1);
-
-namespace PlainSimple\Cloudflare\Tests\Endpoints;
-
-use PHPUnit\Framework\TestCase;
-use PlainSimple\Cloudflare\Adapters\AdapterInterface;
-use PlainSimple\Cloudflare\Auth\AuthInterface;
-use PlainSimple\Cloudflare\Endpoints\Zones;
-use Psr\Http\Message\ResponseInterface;
-use Psr\Http\Message\StreamInterface;
-
-class ZonesTest extends TestCase {
-    private Zones $endpoint;
-    private AdapterInterface $adapter;
-    private AuthInterface $auth;
-    
-    protected function setUp(): void {
-        $this->adapter = $this->createMock(AdapterInterface::class);
-        $this->auth = $this->createMock(AuthInterface::class);
-        $this->auth->method('getHeaders')->willReturn(['Authorization' => 'Bearer test']);
-        $this->endpoint = new Zones($this->adapter, $this->auth);
-    }
-    
-    public function testList(): void {
-        // Arrange
-        $response = $this->createMock(ResponseInterface::class);
-        $body = $this->createMock(StreamInterface::class);
-        $body->method('getContents')->willReturn(json_encode([
-            'result' => [['id' => '1', 'name' => 'test.com']],
-            'result_info' => ['page' => 1, 'per_page' => 20, 'total_pages' => 1]
-        ]));
-        $response->method('getBody')->willReturn($body);
-        $response->method('getStatusCode')->willReturn(200);
-        
-        $this->adapter->method('request')->willReturn($response);
-        
-        // Act
-        $result = $this->endpoint->list();
-        
-        // Assert
-        $this->assertCount(1, $result);
-        $this->assertEquals('test.com', $result[0]->name);
-    }
-    
-    // ... more tests for get, create, update, delete
-}
-```
-
-## Testing Requirements
-
-### Target: 100% Code Coverage
-
-### Test Structure
-- **Unit Tests**: Test each class in isolation
-- **Mocking**: Use PHPUnit mocks for dependencies
-- **Naming**: `ClassNameTest.php` for `ClassName.php`
-- **Methods**: `testMethodName()` or `@test` annotation
-
-### Running Tests
-```bash
-# Run all tests
-composer test
-
-# Run with coverage
-composer test-coverage
-
-# Run specific test file
-./vendor/bin/phpunit tests/Endpoints/AccountsTest.php
-```
-
-### Coverage Requirements
-- All public methods must have tests
-- All exception paths must be tested
-- All entity factory methods must be tested
-
-## Quality Assurance
-
-### Code Style
-```bash
-# Check code style
-composer lint
-
-# Fix code style automatically
-composer lint-fix
-```
-
-### Static Analysis
-```bash
-# Run PHPStan (level 7)
-composer analyse
-```
-
-### Full Check Suite
-```bash
-# Run lint, analyse, and test
-composer check
-```
-
-### Pre-Commit Checklist
-Before committing, ensure:
-- [ ] All tests pass (`composer test`)
-- [ ] Code style is valid (`composer lint`)
-- [ ] Static analysis passes (`composer analyse`)
-- [ ] Coverage is maintained at 100%
-- [ ] PHPDoc is complete for new code
-- [ ] No secrets or credentials in code
-
-## Common Tasks
-
-### Adding a New Entity
-1. Create file in `src/Entities/`
-2. Extend `AbstractEntity`
-3. Define public readonly properties
-4. Implement `makeFromCloudflareData()`
-5. Create corresponding test in `tests/Entities/`
-
-### Adding a New Endpoint
-1. Create file in `src/Endpoints/`
-2. Extend `AbstractEndpoint`
-3. Implement CRUD methods (list, get, create, update, delete)
-4. Use `ListResponse` for lists, `EntityResponse` for single items
-5. Add method to `Client.php`
-6. Create comprehensive tests in `tests/Endpoints/`
-
-### Adding a New Exception
-1. Create file in `src/Exceptions/`
-2. Extend appropriate base exception
-3. Document when it's thrown
-4. Add tests if custom logic
-
-### Updating Dependencies
-```bash
-# Update all dependencies
-composer update
-
-# Update specific package
-composer update package/name
-
-# Check for outdated packages
-composer outdated
-```
-
-## API Reference
-
-### Response Wrappers
-
-**ListResponse**
-- Constructor: `new ListResponse(ResponseInterface $response, string $entityClass)`
-- Implements: `ArrayAccess`, `Countable`, `Iterator`
-- Usage: `foreach ($response as $entity)`
-
-**EntityResponse**
-- Constructor: `new EntityResponse(ResponseInterface $response, string $entityClass)`
-- Properties: `entity` (the hydrated entity)
-
-### Authentication Methods
-
-**ApiToken** (Recommended)
-```php
-$auth = new ApiToken('your-api-token');
-```
-
-**ApiKeyAndEmail** (Legacy)
-```php
-$auth = new ApiKeyAndEmail('api-key', 'email@example.com');
-```
-
-**Unauthorized** (For testing)
-```php
-$auth = new Unauthorized();
-```
-
-### HTTP Methods
-
-Use constants from `Fig\Http\Message\StatusCodeInterface`:
-- `StatusCodeInterface::STATUS_OK` (200)
-- `StatusCodeInterface::STATUS_CREATED` (201)
-- `StatusCodeInterface::STATUS_NO_CONTENT` (204)
-- `StatusCodeInterface::STATUS_BAD_REQUEST` (400)
-- `StatusCodeInterface::STATUS_UNAUTHORIZED` (401)
-- `StatusCodeInterface::STATUS_NOT_FOUND` (404)
-
-## Debugging Tips
-
-### Enable Debug Output
-```php
-$adapter = new GuzzleAdapter(['debug' => true]);
-```
-
-### Check Raw Response
-```php
-$response = $adapter->request('GET', 'https://api.cloudflare.com/client/v4/zones');
-echo $response->getBody()->getContents();
-```
-
-### Xdebug Configuration
-If using devcontainer, Xdebug is pre-configured. Set breakpoints and use VS Code's PHP Debug extension.
-
-## Important Notes
-
-1. **Never commit secrets**: API tokens, keys, or credentials
-2. **Always use strict types**: `declare(strict_types=1)` at file start
-3. **Always add tests**: 100% coverage is the goal
-4. **Follow existing patterns**: Look at `Accounts` endpoint as reference
-5. **Document everything**: PHPDoc for all public APIs
-6. **Check CI status**: Ensure GitHub Actions pass before merging
-7. **Update CHANGELOG**: Document all changes in keepachangelog.com format
-
-## Resources
-
-- [Cloudflare API Documentation](https://developers.cloudflare.com/api/)
-- [PHPUnit Documentation](https://phpunit.de/documentation.html)
-- [PHP-CS-Fixer Documentation](https://cs.symfony.com/)
-- [PHPStan Documentation](https://phpstan.org/user-guide/getting-started)
-- [phpDocumentor Documentation](https://docs.phpdoc.org/)
-
----
-
-Last Updated: 2026-02-19
+# Repository Guide
+
+## Ground Truth
+
+- PHP library, not a workspace: `PlainSimple\Cloudflare\` maps to `src/`; tests are global-namespace classes loaded through Composer classmap.
+- Runtime minimum and Composer platform are PHP 8.3; CI executes on PHP 8.3 and 8.4.
+- Executable `src/` signatures are truth. `Client` accepts `AdapterInterface`; `Client::withApiToken()` builds `GuzzleAdapter`. Accessors: `accounts()`, `zones()`, `dnsRecords()`, `zoneSettings()`, `rulesets()`.
+- Endpoint results are wrappers: one entity via `getEntity()`, lists via `getItems()`, actions via `getResult()`, raw export via `getBody()`. Wrappers are not iterable.
+
+## Entity Mapper
+
+- `makeFromCloudflareData()` records present fields, normalizes known fields through setters, preserves unknown response fields as additional attributes, then marks the entity clean.
+- Setters mark fields present and dirty. `markClean()` clears dirty state only. Nested dirty entities are detected for PATCH payloads.
+- `toCreatePayload()` emits present `CREATE_FIELDS`; `toPatchPayload()` emits dirty `PATCH_FIELDS`; `toReplacePayload()` emits all present `REPLACE_FIELDS`. Enums, dates, nested entities, and arrays normalize recursively.
+- Factories establish valid write intent: `Account::forCreate`, `Zone::forCreate`, `DnsRecord::forCreate`, `Ruleset::forCreate`, `ZoneSetting::forUpdate`, `ZoneSetting::forEnabledUpdate`, `AccountReference::forId`.
+- Endpoint create/update responses hydrate new clean entities. Continue lifecycle with returned entity, mutate through setters, then call update/delete.
+- Resource rules override generic semantics: Accounts PUT present replacement fields; Zones PATCH exactly one dirty writable field; DNS PATCH adds required `name`/`ttl`/`type`; Zone Settings PATCH exactly one non-null `value` or `enabled`.
+
+## Transport
+
+- `AdapterInterface` exposes GET, POST, PUT, PATCH, DELETE, and multipart POST. GET data is query; non-null data for other ordinary verbs is JSON.
+- `GuzzleAdapter` accepts `AuthInterface`, base URI, then Guzzle options. It rejects absolute/scheme-relative endpoint URLs and preserves required auth plus `Accept` headers against case-insensitive overrides.
+- Endpoints encode every external path segment. Keep URLs relative and do not concatenate unencoded IDs.
+- `AbstractEndpoint` accepts only 2xx responses with `success: true` for JSON envelopes. HTTP or envelope failures throw `ErrorResponseException`; malformed successful JSON throws `JsonException`.
+- Parsing rewinds seekable streams and replaces consumed non-seekable streams, so wrapper `getOriginalResponse()` retains readable body content.
+- JSON envelope parsing permits empty successful bodies only for action responses. Raw DNS export bypasses envelope parsing.
+
+## Resource Hazards
+
+- DNS export requests `text/plain`; import uses multipart. Scan may return empty action bodies, and delete may return a sparse 2xx envelope without `success`. `include_shadow_metadata` for create/update/overwrite/batch is placed in URL because adapter query arguments exist only on GET.
+- DNS simple records write `content`; structured records write `data`. PATCH requires a dirty writable field and still sends `name`, `ttl`, `type`; PUT sends all present writable fields. Batch patches/puts require entity IDs.
+- Every Rulesets call requires `RulesetScope::zone()` or `RulesetScope::account()`. Scope availability still depends on Cloudflare phase/product rules.
+- Ruleset and entrypoint replacement is PUT. It sends explicitly present non-null `description`/`rules`; hydrate current state first when preserving rules matters.
+- Rule PATCH uses all present writable definition fields, not dirty-only fields. Definition changes require `action` and `expression`; position-only changes use an empty `Rule` plus `RulePosition`.
+- Rule create/update/delete responses contain the resulting `Ruleset`, not a standalone `Rule`.
+
+## Commands
+
+- Install exactly as CI: `composer install --prefer-dist --no-progress`.
+- CI order: `composer validate --strict`, install, `composer lint`, `composer analyse`, `composer test`. `composer check` runs only the final three, in that order, and stops at first failure.
+- Apply configured style: `composer lint-fix`; PHP CS Fixer scans only `src/` and `tests/`.
+- Focus endpoint tests: `./vendor/bin/phpunit --no-coverage tests/Endpoints`.
+- Focus one file: `./vendor/bin/phpunit --no-coverage tests/Endpoints/RulesetsTest.php`.
+- Focus one method: `./vendor/bin/phpunit --no-coverage --filter testCreatesRulesetWithCreatePayload tests/Endpoints/RulesetsTest.php`.
+- Tests use mocked transports and require no network. `composer test` requests text coverage and needs a coverage driver.
+- Devcontainer defaults to `XDEBUG_MODE=debug`, not coverage. Run full tests there with `XDEBUG_MODE=coverage composer test`, or from host with `docker compose -f .devcontainer/compose.yml run --rm -e XDEBUG_MODE=coverage app composer test`.
+- Devcontainer runs as root and bind-mounts the repo; it can leave `vendor/` root-owned. If host Composer gets permission errors, run Composer through the devcontainer instead of partially updating `vendor/` on host.
+
+## Change Conventions
+
+- New PHP files use `declare(strict_types=1)` per `CONTRIBUTING.md`; a few legacy omissions are not precedent.
+- Entity/list fixtures need `success: true` and correctly shaped `result`; action results may be absent. `ListResponse` accepts page pagination, cursor pagination, or no `result_info`.
+- Add writable API fields to entity properties/setters and correct create/patch/replace allowlists. Read-only or unknown hydrated fields must not leak into writes.
+- Record user-visible changes under `CHANGELOG.md`'s `[Unreleased]` section.
