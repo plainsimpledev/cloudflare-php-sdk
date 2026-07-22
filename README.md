@@ -1,6 +1,6 @@
 # Cloudflare PHP SDK
 
-[![CI](https://github.com/plainsimple/cloudflare-php-sdk/actions/workflows/ci.yml/badge.svg)](https://github.com/plainsimple/cloudflare-php-sdk/actions)
+[![CI](https://github.com/plainsimpledev/cloudflare-php-sdk/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/plainsimpledev/cloudflare-php-sdk/actions/workflows/ci.yml)
 ![PHP Version](https://img.shields.io/badge/PHP-%3E%3D8.3-777BB4.svg)
 [![License](https://img.shields.io/badge/license-MIT-brightgreen.svg)](LICENSE)
 

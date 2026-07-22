@@ -51,4 +51,4 @@
 - New PHP files use `declare(strict_types=1)` per `CONTRIBUTING.md`; a few legacy omissions are not precedent.
 - Entity/list fixtures need `success: true` and correctly shaped `result`; action results may be absent. `ListResponse` accepts page pagination, cursor pagination, or no `result_info`.
 - Add writable API fields to entity properties/setters and correct create/patch/replace allowlists. Read-only or unknown hydrated fields must not leak into writes.
-- Record user-visible changes under `CHANGELOG.md`'s `[Unreleased]` section.
+- Until first release, record user-visible changes under `CHANGELOG.md`'s `[0.1.0] - Unreleased` section.
